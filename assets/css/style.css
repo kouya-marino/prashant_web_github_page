@@ -1227,6 +1227,30 @@ blockquote p {
   margin-top: 0;
 }
 
+.opensource-placeholder {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(6, 182, 212, 0.08));
+}
+
+.opensource-placeholder i {
+  font-size: 2.6rem;
+  color: var(--color-primary);
+  opacity: 0.3;
+}
+
+.opensource-soon {
+  color: var(--color-text-light);
+  cursor: default;
+}
+
+.opensource-soon:hover {
+  gap: 0.35rem;
+  color: var(--color-text-light);
+}
+
 @media (max-width: 768px) {
   .opensource-grid {
     grid-template-columns: 1fr;
