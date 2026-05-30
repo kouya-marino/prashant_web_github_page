@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building a Surveillance Quadruped with Face Recognition | Prashant Rawat</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Turning a Unitree Go2 into an autonomous patrol robot — random-walk navigation, person detection, face recognition against a known-persons DB, and intrusion alerts.">
+  <meta name="author" content="Prashant Rawat">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Building a Surveillance Quadruped with Face Recognition">
+  <meta property="og:description" content="Unitree Go2 autonomous patrol: random-walk navigation, person detection, face-DB verification, and intrusion alerts in a mapped area.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/Projects/P_UnitreeGo2.jpg">
+  <meta property="article:published_time" content="2026-02-28">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Building a Surveillance Quadruped with Face Recognition">
+  <meta name="twitter:description" content="Unitree Go2 autonomous patrol: random-walk navigation, person detection, face-DB verification, and intrusion alerts in a mapped area.">
+  <meta name="twitter:image" content="../assets/images/Projects/P_UnitreeGo2.jpg">
+
+  <meta name="keywords" content="Unitree Go2, Quadruped Robot, Surveillance Robot, Face Recognition, Person Detection, Intrusion Detection, Autonomous Patrol, LiDAR Mapping, Bluetooth Voice Control, Robotics, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#skills">Skills</a></li>
+          <li><a href="../index.html#experience">Experience</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Project Deep-Dive</span>
+            <time datetime="2026-02-28">Feb 28, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 7 min read</span>
+          </div>
+          <h1>Building a Surveillance Quadruped with Face Recognition</h1>
+          <p class="article-subtitle">Turning a Unitree Go2 into an autonomous patrol robot — random-walk navigation in a mapped area, person detection, face-DB verification, intrusion alerts, and Bluetooth voice commands.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/Projects/P_UnitreeGo2.jpg" alt="Unitree Go2 quadruped robot used as an autonomous patrol platform">
+        </div>
+
+        <div class="article-content">
+
+          <p>I wanted to build an autonomous indoor/outdoor patrol robot that actually <em>does</em> something useful — not just walks around a room for a demo. The platform I picked was the Unitree Go2: rugged enough for outdoor patrol, stable enough for long runs, and small enough to fit through doorways.</p>
+
+          <p>The result is a surveillance quadruped. It wakes up, drops into walk mode, patrols a pre-mapped area on a random-walk policy, detects people it encounters, runs face recognition against a known-persons database, and if it sees someone who isn't on the list, it raises an intrusion alert. It also takes Bluetooth voice commands, so an operator can interrupt the patrol with a spoken instruction from across the room.</p>
+
+          <blockquote>
+            <p>This post focuses on the surveillance-specific pieces: the random-walk patrol policy, the person-detection and face-recognition pipeline, the intrusion alert path, and the Bluetooth voice-command override.</p>
+          </blockquote>
+
+          <h2>The stack</h2>
+
+          <p>The robot runs entirely on its onboard compute module — no backpack laptop, no tethered machine. The software breaks down into a few layers:</p>
+
+          <ul>
+            <li><strong>Localization</strong> — LiDAR-Inertial odometry paired with a global ICP-based corrector against a pre-built point-cloud map, giving continuous drift-free pose in the map frame.</li>
+            <li><strong>Navigation</strong> — move_base with a DWA local planner, fed by live costmaps built from the registered LiDAR scans.</li>
+            <li><strong>Low-level control</strong> — a small bridge layer between the nav stack's velocity commands and the Go2's SDK, applying deadband and clamp for safety.</li>
+            <li><strong>Executor</strong> — a single long-lived Python process that owns the SDK clients, the backend link, and the application loop (patrol → detect → verify → alert).</li>
+            <li><strong>Vision</strong> — a dedicated controller juggling the RGB stream and the detection/recognition pipeline.</li>
+            <li><strong>Audio in</strong> — a Bluetooth microphone pipeline for operator voice commands.</li>
+          </ul>
+
+          <p>All of it runs onboard. The only thing the wifi link carries is alert payloads out and operator commands in.</p>
+
+          <h2>Working with the Go2</h2>
+
+          <p>A few things about the Go2 shaped the design:</p>
+
+          <ul>
+            <li><strong>Gait stability.</strong> The Go2 is basically a trot machine — it accepts velocity commands across a wide range and doesn't get visibly unstable at the edges. That means the velocity bridge layer can stay simple.</li>
+            <li><strong>Camera height.</strong> The Go2's camera sits low — roughly knee height. Face recognition requires the robot to actually walk close to a person, because a standing person's face is well above the camera's natural line of sight at any distance.</li>
+            <li><strong>Battery and runtime.</strong> Walking a quadruped is cheap. That matters when the use case is "patrol this area for an hour unattended."</li>
+            <li><strong>No arms.</strong> Which simplifies everything — no manipulation, no pick-and-place, no arm-reach safety concerns. Navigation, perception, and audio only.</li>
+          </ul>
+
+          <h2>Random-walk navigation in a mapped area</h2>
+
+          <p>The patrol doesn't follow a fixed route. Fixed routes are predictable, and predictable surveillance is easy to slip past — you just wait for the robot to walk past, then move. Instead, the patrol picks random goals within the pre-mapped area and lets move_base plan paths to them.</p>
+
+          <p>The random-walk policy is deliberately simple:</p>
+
+          <ol>
+            <li>Load the pre-built occupancy grid and point cloud for the patrol area (standard 2D costmap + 3D point cloud)</li>
+            <li>Sample a random 2D point uniformly from the navigable region of the costmap (reject samples that fall on obstacles or inside the inflation zone)</li>
+            <li>Send the point to move_base as a goal and wait for success, abort, or timeout</li>
+            <li>On success: pause briefly to let the vision pipeline scan the area, then loop</li>
+            <li>On abort: pick a new random goal and try again</li>
+          </ol>
+
+          <p>It's not fancy, but the emergent behaviour looks surprisingly coherent — the robot covers most of the area within a few minutes, lingers briefly at each stop, and never revisits the same spot in a predictable rhythm.</p>
+
+          <h2>Person detection and face recognition</h2>
+
+          <p>The vision pipeline runs on the Go2's onboard compute and has two stages:</p>
+
+          <ol>
+            <li><strong>Person detection</strong> — a lightweight object detector (Detectron2 with a person-only class head) that runs on the live RGB stream. This is the cheap stage; it triggers everything else.</li>
+            <li><strong>Face recognition</strong> — when a person detection fires, the controller crops the upper portion of the bounding box, runs a face embedding model over it, and compares the resulting vector against the known-persons database using cosine similarity. A match above a tuned threshold counts as "known"; anything below counts as "unknown".</li>
+          </ol>
+
+          <p>The known-persons database is just a directory of labelled face images that gets pre-computed into embeddings once, then loaded into memory at startup. Adding a new person to the allow-list is as simple as dropping a new image into the directory and re-running the embedding step. There's no web UI for managing the DB — intentionally, because the DB lives on the robot and isn't exposed to the network.</p>
+
+          <h2>Intrusion detection in the mapped / PCD area</h2>
+
+          <p>Putting the pieces together, intrusion detection looks like this:</p>
+
+          <ol>
+            <li>The Go2 patrols the pre-mapped area using the random-walk policy above</li>
+            <li>At every stop — and continuously while walking — the person detector scans the RGB stream</li>
+            <li>When a person is detected inside the mapped patrol region, the face-recognition stage fires</li>
+            <li>The detected face embedding is matched against the known-persons DB</li>
+            <li>If the face matches someone in the DB, the robot logs the encounter (timestamp, location in the map frame, similarity score) and moves on</li>
+            <li>If the face does <em>not</em> match — or if a person is detected but no face is clearly visible — the robot flags it as a potential intrusion and sends an <strong>alert</strong></li>
+          </ol>
+
+          <p>An alert is a simple JSON payload sent over WebSocket to a backend endpoint: <code>{timestamp, location, annotated_image_base64, match_score, status}</code>. The backend persists it and optionally forwards it to a notification channel (email, chat, whatever the operator has configured).</p>
+
+          <p>Because every alert includes the robot's position in the <strong>map frame</strong> (from the onboard localization stack), the operator can see exactly where in the patrolled area the unknown person was spotted — not just "somewhere on the camera feed." That's the difference between "there might be an intruder" and "there's an intruder near the east entrance, here's the last known map position."</p>
+
+          <h2>Bluetooth voice commands</h2>
+
+          <p>The last piece is an operator override: a small Bluetooth microphone that pairs with the Go2 at startup and streams audio into a lightweight speech-to-text model running on the robot. A short list of hard-coded command phrases — things like "stop", "go home", "patrol", "stand down", "sit" — get matched against the transcript, and each one maps to an action in the same executor that runs the patrol loop.</p>
+
+          <p>It's deliberately a tiny vocabulary. General-purpose speech recognition on a mobile robot is a rabbit hole, and for a surveillance use case you don't need it — you need a handful of reliable overrides that work even when the operator isn't near a laptop. The Bluetooth link means the operator can issue those overrides from anywhere in range, not from a tethered console.</p>
+
+          <h2>Why a quadruped for this?</h2>
+
+          <p>You could do most of this with a fixed camera and a person detector — cheaper, simpler, no robot required. The reason to put it on a Go2 is <em>coverage</em>. A fixed camera sees one room. A patrolling quadruped sees the entire mapped area and can physically walk toward something suspicious for a closer look, from an angle the camera was never placed at.</p>
+
+          <p>It's also the kind of demo that makes sense to watch in person. A box on a wall running a neural net is not a conversation starter. A four-legged robot that walks around, notices you, checks your face against a list, and either ignores you or raises an alert — that's a conversation starter.</p>
+
+          <h2>Closing</h2>
+
+          <p>The hard parts of this project weren't the surveillance-specific pieces. The random-walk policy is a few dozen lines of Python. The face-recognition stage is mostly calling an off-the-shelf embedding model. The alert path is a JSON POST.</p>
+
+          <p>The hard parts are the same as every mobile-robot project: getting localization stable enough that "patrol this mapped area" is actually a well-defined command, getting the nav stack tuned so the robot doesn't pin itself into corners, and getting the vision pipeline to run at a rate the onboard compute can sustain while everything else is also running.</p>
+
+          <p>Once those are solved, a surveillance application on top is a relatively small layer — and the same foundation is reusable for anything else you might want a quadruped to do: inspection, delivery, environmental monitoring, or just showing up somewhere on a schedule. The order I'd recommend if you're building something similar is: localization first, then navigation, then perception, then the application. Skipping any of those out of order will cost you more time later than it saves now.</p>
+
+          <div class="article-tags">
+            <span class="project-tag">Unitree Go2</span>
+            <span class="project-tag">Quadruped</span>
+            <span class="project-tag">Surveillance</span>
+            <span class="project-tag">Face Recognition</span>
+            <span class="project-tag">Person Detection</span>
+            <span class="project-tag">Intrusion Detection</span>
+            <span class="project-tag">Autonomous Patrol</span>
+            <span class="project-tag">LiDAR</span>
+            <span class="project-tag">Detectron2</span>
+            <span class="project-tag">Bluetooth</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

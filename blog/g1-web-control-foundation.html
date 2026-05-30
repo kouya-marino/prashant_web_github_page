@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Building a Browser-Based Control Panel for the Unitree G1 (Part 1: Foundation) | Prashant Rawat</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Part 1 of a 3-part series on building a browser-based operator console for the Unitree G1 humanoid — live costmap, point cloud, camera, and click-to-navigate.">
+  <meta name="author" content="Prashant Rawat">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Building a Browser-Based Control Panel for the Unitree G1 (Part 1: Foundation)">
+  <meta property="og:description" content="React + Three.js operator console for a Unitree G1 humanoid — live telemetry, point cloud, and click-to-go navigation, built from scratch.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/blog/g1-web-control/5.png">
+  <meta property="article:published_time" content="2026-03-15">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Building a Browser-Based Control Panel for the Unitree G1 (Part 1: Foundation)">
+  <meta name="twitter:description" content="React + Three.js operator console for a Unitree G1 humanoid — live telemetry, point cloud, and click-to-go navigation, built from scratch.">
+  <meta name="twitter:image" content="../assets/images/blog/g1-web-control/5.png">
+
+  <meta name="keywords" content="Unitree G1, Humanoid Robot, Web Operator Console, React, Three.js, ROS, rosbridge, FAST-LIO, move_base, LiDAR, Click-to-Navigate, Robotics Web UI, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#skills">Skills</a></li>
+          <li><a href="../index.html#experience">Experience</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Project Deep-Dive</span>
+            <time datetime="2026-03-15">Mar 15, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 9 min read</span>
+          </div>
+          <h1>Building a Browser-Based Control Panel for the Unitree G1 Humanoid (from scratch)</h1>
+          <p class="article-subtitle">Part 1 of 3 — The Foundation: localization, live telemetry, point cloud overlay, and click-to-go navigation, all running in a web browser.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/blog/g1-web-control/5.png" alt="Web operator console showing live costmap, camera feed, and Unitree G1 robot pose">
+        </div>
+
+        <div class="article-content">
+
+          <p>When I started this project, I had a Unitree G1 humanoid robot, a Livox MID360 LiDAR, and a goal: control the entire thing from a web browser. No RViz, no ROS native tooling — just open a browser tab and you have a full operator console for a humanoid robot. Live map. Live camera. Click-to-navigate. Live point cloud. All of it.</p>
+
+          <p>This is Part 1, where I cover the foundation: getting the robot localized, getting it talking to the browser, and turning a passive 3D viewer into a live operator console. <a href="g1-web-control-automation.html">Part 2</a> covers the automation layer — programmable routes, robot actions, and object detection. <a href="g1-web-control-robot-side.html">Part 3</a> is the robot-side deep dive.</p>
+
+          <blockquote>
+            <p><strong>Important upfront:</strong> I built every layer of this from scratch. The web UI, the FastAPI backend, the FAST-LIO localization stack on the robot, the move_base navigation tuning, the Unitree SDK action controllers, even the cmd_vel bridge between move_base and the robot's leg controllers. There is no off-the-shelf "G1 web controller" — this is hand-rolled end to end.</p>
+          </blockquote>
+
+          <h2>What it looks like</h2>
+
+          <img src="../assets/images/blog/g1-web-control/1.png" alt="Robot powered on, web app idle on the initial screen" loading="lazy">
+          <p class="img-caption">Robot powered on, web app idle (initial screen)</p>
+
+          <p>That's the starting screen. The robot is powered up and reachable on the network, but the web app hasn't connected to anything yet — just the robot card waiting for a click.</p>
+
+          <img src="../assets/images/blog/g1-web-control/2.png" alt="Unitree G1 reachable but not yet in walk mode, FSM state surfaced in the UI" loading="lazy">
+          <p class="img-caption">Robot is on but not in walk mode — the FSM state is surfaced clearly</p>
+
+          <p>This second view is what you see when the robot is up and reachable, but not yet in walk mode. The G1 has multiple FSM states (sit, stand, walk, run), and walking has to be explicitly enabled before any navigation works. The UI surfaces this clearly so you don't end up wondering why your nav goals are being ignored.</p>
+
+          <h2>The stack</h2>
+
+<pre><code>Browser (React + Three.js)
+        │
+        ├── HTTP → FastAPI backend (serves PCD, costmaps, routes, static files)
+        │
+        └── WebSocket → rosbridge_server → ROS on the robot
+                                                    │
+                                                    ├── FAST-LIO + Open3D localization
+                                                    ├── move_base (DWA local planner)
+                                                    ├── Custom Unitree SDK action controllers
+                                                    └── Realsense camera</code></pre>
+
+          <p><strong>Frontend:</strong> React 19 + Vite + TypeScript + Three.js. Three.js handles all 3D rendering — the point cloud, the costmap meshes, the path lines, the robot URDF model. There's no Unity, no game engine — just plain WebGL.</p>
+
+          <p><strong>Backend:</strong> FastAPI. Two jobs: serve static map data (PCD point clouds, costmap PGMs, route JSON), and act as a WebSocket relay between the browser and a Python "executor" process running on the robot.</p>
+
+          <p><strong>Robot side (the part nobody talks about):</strong> ROS running on the G1's onboard Jetson, with <a href="https://github.com/deepglint/FAST_LIO_LOCALIZATION_HUMANOID" target="_blank" rel="noopener noreferrer">FAST-LIO (humanoid localization fork)</a> doing LiDAR-Inertial odometry, an Open3D ICP node correcting drift against a pre-built map, and a custom Python executor using <a href="https://github.com/unitreerobotics/unitree_sdk2_python" target="_blank" rel="noopener noreferrer"><code>unitree_sdk2py</code></a> to drive the robot's legs and arms.</p>
+
+          <h2>Building the localization stack</h2>
+
+          <p>Before any "click on map → robot drives there" magic could work, I needed reliable localization. The G1 doesn't ship with this — it's a humanoid platform, you build the perception stack yourself.</p>
+
+          <p>The pipeline I built:</p>
+          <ol>
+            <li><strong>Pre-mapping pass</strong> — drive the robot around the space with FAST-LIO running in mapping mode. Output: a <code>.ply</code> point cloud of the environment.</li>
+            <li><strong>Runtime localization</strong> — at deployment time, FAST-LIO runs in odometry-only mode (publishing <code>odom → base_link</code> TF), and an Open3D ICP node continuously matches the live LiDAR scans against the pre-built <code>.ply</code> map. The ICP node publishes the <code>map → odom</code> correction so move_base can use the global frame.</li>
+          </ol>
+
+          <p>This split is the standard recipe for global LiDAR localization: pair a fast local odometry source with a slower global corrector. FAST-LIO is fast but drifts over long traverses. Open3D ICP is slow but globally consistent. Together they give you continuous, drift-free pose at a rate that's plenty for indoor humanoid navigation.</p>
+
+          <p>Tuning this took a lot of trial and error. The Open3D ICP fitness threshold, the costmap transform tolerance, the FAST-LIO filter sizes — every parameter affects how stable the navigation is.</p>
+
+          <h2>Selecting a map</h2>
+
+          <img src="../assets/images/blog/g1-web-control/3.png" alt="Map selection screen listing maps available in the backend scans directory" loading="lazy">
+          <p class="img-caption">Map selection screen — lists every map under the backend's scans directory</p>
+
+          <p>The web app lists every map available in the backend's <code>scans/</code> directory. Each map is a folder with a <code>.pcd</code> point cloud, a <code>.pgm</code> costmap, and a YAML metadata file. Click one and the backend loads it for the current session.</p>
+
+          <img src="../assets/images/blog/g1-web-control/4.png" alt="Costmap loaded in the 3D scene with the toolbar showing ROS disconnected" loading="lazy">
+          <p class="img-caption">Map loaded, ROS not yet connected — toolbar shows ROS disconnected</p>
+
+          <p>After selecting a map, you land in the main viewer. At this point you can already see the costmap rendered as a flat mesh in the 3D scene — that's pure backend data, no robot connection needed. But the toolbar shows <strong>ROS disconnected</strong> because rosbridge isn't reachable yet (or the robot isn't running its launch files).</p>
+
+          <h2>ROS connected: live operator view</h2>
+
+          <img src="../assets/images/blog/g1-web-control/5.png" alt="ROS connected — live local costmap, global costmap, camera feed, robot pose, and battery in one view" loading="lazy">
+          <p class="img-caption">ROS connected — full live telemetry: local costmap, global costmap, camera feed, robot pose, battery</p>
+
+          <p>Once rosbridge is up and the robot is publishing, the entire UI comes alive. From this single screen you can see:</p>
+
+          <ul>
+            <li><strong>Robot pose</strong> — the G1 URDF model is rendered in 3D, position updated live from <code>/localization_3d</code> (the corrected map-frame pose from the Open3D node)</li>
+            <li><strong>Local costmap</strong> — the colorful gradient around the robot, updated by <code>/move_base/local_costmap/costmap</code>. Red = obstacle, blue→cyan→green→yellow = increasing cost. This is the rolling window the local planner uses for obstacle avoidance.</li>
+            <li><strong>Global costmap</strong> — the larger grayscale layer, from <code>/move_base/global_costmap/costmap</code>. This is the planner's view of the entire mapped environment.</li>
+            <li><strong>Camera feed</strong> — a compressed JPEG stream from the robot's RealSense, decoded directly in the browser from <code>/camera/color/image_raw/compressed</code>. Low resolution, low framerate to keep the bandwidth manageable on wifi.</li>
+            <li><strong>Battery indicator</strong> — top-left, mapped from <code>/battery_soc</code></li>
+            <li><strong>ROS connection status</strong> — green dot when rosbridge is reachable</li>
+          </ul>
+
+          <p>Everything updates at the rate ROS publishes it. No polling, no refresh — pure WebSocket subscriptions through rosbridge's JSON protocol.</p>
+
+          <h2>Layers — controlling the view</h2>
+
+          <img src="../assets/images/blog/g1-web-control/6.png" alt="Layers panel dropdown showing toggleable visualizations: PCD, Robot, Costmaps, Paths, Goal, Camera" loading="lazy">
+          <p class="img-caption">Layers panel — every visualization is independently toggleable</p>
+
+          <p>The Layers dropdown lets you toggle every visualization on or off independently:</p>
+
+          <ul>
+            <li><strong>PCD</strong> — the raw SLAM point cloud overlay (off by default, expensive to render)</li>
+            <li><strong>Robot</strong> — the URDF model</li>
+            <li><strong>Global costmap / Local costmap</strong></li>
+            <li><strong>Global path / Local plan</strong> — the planned trajectories from move_base</li>
+            <li><strong>Goal</strong> — the green arrow marker for the current navigation goal</li>
+            <li><strong>Camera</strong> — the side panel video feed</li>
+          </ul>
+
+          <p>This is more useful than it sounds. When you're debugging a stuck robot, being able to flip layers in/out one at a time is the difference between "I have no idea what's happening" and "oh, the local costmap thinks there's an obstacle right in front."</p>
+
+          <h2>Point cloud overlay</h2>
+
+          <img src="../assets/images/blog/g1-web-control/7.png" alt="Full SLAM point cloud overlay rendered in 3D with the costmap mesh and live robot pose" loading="lazy">
+          <p class="img-caption">PCD layer enabled — the full pre-built point cloud overlaid on the live scene</p>
+
+          <p>Toggle the PCD layer and the entire pre-built map appears as a colored point cloud (height-coded). Now you have the full environment context: the costmap mesh on the floor, the point cloud showing walls and structure, the robot in the middle, all the live ROS topics overlaid.</p>
+
+          <p>The point cloud is loaded once from the backend (<code>/pcd</code>) and cached client-side. Three.js handles a couple million points without breaking a sweat thanks to the height-coloring shader.</p>
+
+          <p>This is the view I use most when planning routes — you can see the geometry properly, not just the flat costmap projection.</p>
+
+          <h2>Click-to-navigate</h2>
+
+          <p>So far this is all visualization. The interactive piece is <strong>2D Goal Pose</strong>: click on the map, drag to set the heading, release. Under the hood the UI publishes a <code>geometry_msgs/PoseStamped</code> to <code>/move_base_simple/goal</code> via rosbridge. move_base picks it up, plans a path, the local planner publishes velocity commands to <code>/cmd_vel</code>, and a custom bridge node I wrote forwards those velocities to the Unitree SDK's <code>LocoClient.SetVelocity()</code>.</p>
+
+          <p>Concretely, the click-to-navigate flow does this:</p>
+          <ol>
+            <li>I click somewhere on the map, drag to set the orientation, release</li>
+            <li>The green goal arrow appears</li>
+            <li>The global path (green line) computes almost instantly</li>
+            <li>The local plan (orange line) updates as the robot moves</li>
+            <li>The robot URDF model in the 3D scene tracks the real robot's pose live</li>
+            <li>The robot drives to the goal and stops with the right heading</li>
+          </ol>
+
+          <p>There's a <code>cmd_vel</code> bridge between move_base and the Unitree SDK that I had to write because the G1 doesn't speak ROS natively — its legs are driven by <code>unitree_sdk2py</code> over DDS. The bridge applies deadband filtering and clamps to safe limits before forwarding to <code>loco_client.SetVelocity(vx, vy, omega, duration)</code>.</p>
+
+          <h2>Why build all this?</h2>
+
+          <p>Because RViz is a desktop tool. Because a real-world humanoid demo needs something an operator can use without installing ROS. Because remote teleops over a fragile wifi link need a UI that degrades gracefully when topics drop. Because you can't sell people on "the future of robotics" by handing them a Linux laptop with a Vim window open.</p>
+
+          <p>A web UI lets you put a tablet in someone's hand, walk them through what the robot is seeing, and let them click a goal on a real map of the room they're standing in. That's the demo. That's why this exists.</p>
+
+          <h2>What's next</h2>
+
+          <p>This post covered the foundation — visualization, telemetry, and click-to-go navigation. In <a href="g1-web-control-automation.html">Part 2</a> I cover the automation layer:</p>
+
+          <ul>
+            <li>Building waypoint routes by clicking on the map</li>
+            <li>Attaching robot actions to waypoints (audio, stand, sit, pick &amp; place, AprilTag docking)</li>
+            <li>Pause / Resume / Retry / Skip during execution</li>
+            <li>The Detectron2 object detection pipeline and how detections flow back to the UI</li>
+          </ul>
+
+          <p>And <a href="g1-web-control-robot-side.html">Part 3</a> is the robot-side deep dive — FAST-LIO, move_base, the cmd_vel bridge, and the action controllers.</p>
+
+          <p><em>Built from scratch on a Unitree G1 with a Livox MID360 LiDAR and a Jetson Orin compute module. No off-the-shelf web controllers, no copy-pasted templates — every layer hand-rolled.</em></p>
+
+          <div class="article-nav-links">
+            <a href="g1-web-control-automation.html" class="article-nav-link next">
+              <span class="article-nav-label">Next <i class="fas fa-arrow-right"></i></span>
+              <span class="article-nav-title">Part 2 — Routes, Actions &amp; Detection</span>
+            </a>
+          </div>
+
+          <div class="article-tags">
+            <span class="project-tag">Unitree G1</span>
+            <span class="project-tag">Humanoid</span>
+            <span class="project-tag">React</span>
+            <span class="project-tag">Three.js</span>
+            <span class="project-tag">FastAPI</span>
+            <span class="project-tag">ROS</span>
+            <span class="project-tag">rosbridge</span>
+            <span class="project-tag">FAST-LIO</span>
+            <span class="project-tag">move_base</span>
+            <span class="project-tag">LiDAR</span>
+            <span class="project-tag">Web UI</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

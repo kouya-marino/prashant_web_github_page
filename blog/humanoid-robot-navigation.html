@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indoor Navigation for a Humanoid Robot | Prashant Rawat</title>
+
+  <meta name="description" content="A walkthrough of integrating VLM, LiDAR, and RealSense D435i on the Unitree G1 humanoid robot for indoor navigation, perception, and interaction.">
+  <meta name="author" content="Prashant Rawat">
+
+  <meta property="og:title" content="Indoor Navigation for a Humanoid Robot">
+  <meta property="og:description" content="Integrating VLM, LiDAR, and RealSense on the Unitree G1 humanoid robot for indoor navigation and interaction.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/Projects/P_UnitreeG1.gif">
+  <meta property="article:published_time" content="2026-01-25">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Indoor Navigation for a Humanoid Robot">
+  <meta name="twitter:description" content="Integrating VLM, LiDAR, and RealSense on the Unitree G1 humanoid robot for indoor navigation and interaction.">
+  <meta name="twitter:image" content="../assets/images/Projects/P_UnitreeG1.gif">
+
+  <meta name="keywords" content="Humanoid Robot, Indoor Navigation, VLM, Gemini, LiDAR, RealSense, ROS, Unitree G1, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#skills">Skills</a></li>
+          <li><a href="../index.html#experience">Experience</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <!-- Back to blog -->
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <!-- Article Header -->
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Project Deep-Dive</span>
+            <time datetime="2026-01-25">Jan 25, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 8 min read</span>
+          </div>
+          <h1>Indoor Navigation for a Humanoid Robot</h1>
+          <p class="article-subtitle">Integrating VLM, LiDAR, and Intel RealSense D435i on the Unitree G1 humanoid robot for indoor navigation, visual perception, and real-time interaction.</p>
+        </header>
+
+        <!-- Cover Image -->
+        <div class="article-cover">
+          <img src="../assets/images/Projects/P_UnitreeG1.gif" alt="Unitree G1 Humanoid Robot">
+        </div>
+
+        <!-- Article Content -->
+        <div class="article-content">
+
+          <h2>The Challenge</h2>
+          <p>The goal was ambitious: take a Unitree G1 humanoid robot and make it navigate indoor spaces, perceive objects through its camera, and interact with people during live presentations.</p>
+          <p>This wasn't a research demo. It needed to work reliably during live demonstrations. That constraint shaped every technical decision.</p>
+
+          <h2>System Architecture</h2>
+          <p>The system runs on ROS, with three main subsystems working together:</p>
+          <ul>
+            <li><strong>Navigation</strong> — LiDAR-based SLAM with checkpoint motion planning for structured traversal of indoor environments</li>
+            <li><strong>Perception</strong> — Intel RealSense D435i depth camera feeding into VLM (Gemini) and OpenAI APIs for real-time visual understanding</li>
+            <li><strong>Interaction</strong> — Hand-raise detection via VLM triggers an interactive Q&amp;A mode where the robot responds to audience questions</li>
+          </ul>
+
+          <h2>Navigation: LiDAR + Checkpoint Planning</h2>
+          <p>The navigation system uses LiDAR for localization and obstacle avoidance. Rather than fully autonomous exploration, I designed a checkpoint-based planning approach — the robot follows predefined waypoints but dynamically avoids obstacles between them.</p>
+          <p>This was a deliberate trade-off: in a demo setting, you want predictable movement patterns while still handling unexpected obstacles (chairs moved, people walking by).</p>
+
+          <h3>Key decisions</h3>
+          <ul>
+            <li>Used the standard ROS navigation stack with customized planner plugins</li>
+            <li>Depth camera supplements LiDAR for close-range obstacle detection</li>
+            <li>Recovery behaviors tuned for demo environments (small rooms, furniture)</li>
+          </ul>
+
+          <h2>Perception: Giving the Robot Eyes</h2>
+          <p>The biggest breakthrough was integrating VLM (Gemini) and OpenAI APIs with the robot's onboard RealSense camera. The pipeline:</p>
+          <ol>
+            <li>RealSense D435i captures RGB frames at the robot's eye level</li>
+            <li>Frames are sent to the VLM for scene understanding</li>
+            <li>The VLM generates natural language descriptions of what the robot sees</li>
+            <li>These descriptions are synthesized into speech for live presentation</li>
+          </ol>
+          <p>The result: The robot can look at an object on a table, identify it, and say something like <em>"I can see a blue coffee mug and a notebook on the desk."</em></p>
+
+          <h2>Interaction: Hand-Raise Q&amp;A</h2>
+          <p>During presentations, audience members can raise their hand. The VLM detects this gesture from the camera feed and switches the robot into Q&amp;A mode, where it can answer questions about what it sees or what it's doing.</p>
+          <p>This feature alone transformed the demo from a passive showcase into an interactive experience — and it's the thing that consistently gets the strongest reaction from audiences.</p>
+
+          <h2>Lessons Learned</h2>
+          <ul>
+            <li><strong>Demo reliability beats benchmark accuracy.</strong> A system that works 95% of the time but fails unpredictably during live demos is worse than one that works 90% of the time but fails gracefully.</li>
+            <li><strong>Latency is the real enemy.</strong> VLM API calls add 1-3 seconds of latency. Masking this with natural robot movement and speech pacing was critical.</li>
+            <li><strong>ROS is the right choice</strong> for multi-sensor robot systems, but the learning curve for ML engineers coming from pure Python is real.</li>
+          </ul>
+
+          <h2>What's Next</h2>
+          <p>We're continuing to expand the robot's capabilities — including more complex manipulation tasks and multi-turn conversation. The foundation is solid; now it's about building richer behaviors on top.</p>
+
+          <!-- Article Tags -->
+          <div class="article-tags">
+            <span class="project-tag">Python</span>
+            <span class="project-tag">ROS</span>
+            <span class="project-tag">LiDAR</span>
+            <span class="project-tag">VLM</span>
+            <span class="project-tag">Gemini</span>
+            <span class="project-tag">OpenAI API</span>
+            <span class="project-tag">Intel RealSense</span>
+            <span class="project-tag">Unitree G1</span>
+          </div>
+        </div>
+
+        <!-- Author -->
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <!-- Back link -->
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

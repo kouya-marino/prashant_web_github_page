@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlchemyAnnotate: A Lightweight Image Annotation Tool | Prashant Rawat</title>
+
+  <meta name="description" content="How I built AlchemyAnnotate — an open-source desktop tool for bounding box annotation that exports to YOLO, Pascal VOC, and COCO formats.">
+  <meta name="author" content="Prashant Rawat">
+
+  <meta property="og:title" content="AlchemyAnnotate: A Lightweight Image Annotation Tool">
+  <meta property="og:description" content="Open-source bounding box annotation tool with YOLO, VOC, and COCO export.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/Projects/P_alchemyannotate.png">
+  <meta property="article:published_time" content="2025-10-10">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AlchemyAnnotate: A Lightweight Image Annotation Tool">
+  <meta name="twitter:description" content="Open-source bounding box annotation tool with YOLO, VOC, and COCO export.">
+  <meta name="twitter:image" content="../assets/images/Projects/P_alchemyannotate.png">
+
+  <meta name="keywords" content="AlchemyAnnotate, Image Annotation, Bounding Box, YOLO, Pascal VOC, COCO, Object Detection, Dataset, PySide6, Python, Open Source">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../index.html#opensource">Open Source</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Open Source</span>
+            <time datetime="2025-10-10">Oct 10, 2025</time>
+            <span class="read-time"><i class="far fa-clock"></i> 7 min read</span>
+          </div>
+          <h1>AlchemyAnnotate: A Lightweight Image Annotation Tool</h1>
+          <p class="article-subtitle">I built a desktop annotation tool that exports to YOLO, Pascal VOC, and COCO — because existing tools were either too heavy or too limited.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/Projects/P_alchemyannotate.png" alt="AlchemyAnnotate Interface">
+        </div>
+
+        <div class="article-content">
+
+          <h2>The Problem</h2>
+          <p>If you train object detection models, you need labeled data. And labeling data means drawing bounding boxes on hundreds (or thousands) of images. The existing tools fell into two camps:</p>
+          <ul>
+            <li><strong>Web-based tools</strong> (Label Studio, CVAT) — powerful but heavy. Overkill for a quick local annotation session.</li>
+            <li><strong>Simple scripts</strong> — fast but limited. No format conversion, no session persistence, poor UX.</li>
+          </ul>
+          <p>I wanted something in between: a <strong>lightweight desktop app</strong> that opens instantly, lets me annotate images with bounding boxes, and exports to the three formats I actually use — YOLO, Pascal VOC, and COCO.</p>
+
+          <h2>Installation</h2>
+          <pre><code>pip install alchemyannotate</code></pre>
+          <p>Requires Python 3.10+. PySide6 is installed automatically. That's it — no config files, no setup wizards.</p>
+
+          <h2>Walkthrough: Labeling a Car/Bike Dataset</h2>
+          <p>Let me walk through a real example. I have 30 images — 15 cars and 15 bikes — and I want to create a labeled dataset for training an object detector. Here's exactly how it works in AlchemyAnnotate.</p>
+
+          <h3>Step 1: Select your image folder</h3>
+          <p>Open AlchemyAnnotate and select the folder containing your training images. Here I'm pointing it at a <code>train</code> folder with 30 car and bike images. The left panel immediately shows all 30 images listed and ready to navigate.</p>
+          <img src="../assets/images/blog/alchemyannotate/select-folder.png" alt="AlchemyAnnotate — selecting the train folder containing 30 car and bike images" loading="lazy">
+          <p class="img-caption">Selecting the train folder with 30 images (15 cars, 15 bikes)</p>
+
+          <h3>Step 2: Draw a bounding box and create a new class</h3>
+          <p>Click "Draw Box" in the toolbar, then drag a rectangle around the object. On the first annotation, AlchemyAnnotate asks you to create a class. Here I'm creating the <strong>bike</strong> class for the first time.</p>
+          <img src="../assets/images/blog/alchemyannotate/bbox-bike-class.png" alt="Drawing a bounding box on a bike and creating the bike class" loading="lazy">
+          <p class="img-caption">Drawing a bounding box and creating the "bike" class</p>
+
+          <h3>Step 3: Add another class</h3>
+          <p>Navigate to a car image (using A/D keys or the file list), draw a box, and create the <strong>car</strong> class. Notice the Classes panel on the right now shows the existing "bike" class — you can either select it or type a new class name below.</p>
+          <img src="../assets/images/blog/alchemyannotate/bbox-car-class.png" alt="Drawing a bounding box on a car and creating the car class" loading="lazy">
+          <p class="img-caption">Creating the "car" class — the existing "bike" class is already visible in the dropdown</p>
+
+          <h3>Step 4: Reuse an existing class</h3>
+          <p>When you encounter another bike, you don't need to type the class name again. The "Select Class" dialog shows your existing classes in a dropdown — just pick "bike" and hit OK. This keeps your labels consistent across the whole dataset.</p>
+          <img src="../assets/images/blog/alchemyannotate/select-existing-class.png" alt="Selecting an existing class from the dropdown for a new bounding box" loading="lazy">
+          <p class="img-caption">Reusing the existing "bike" class from the dropdown — no retyping needed</p>
+
+          <h3>Step 5: Edit or delete annotations</h3>
+          <p>Made a mistake? Right-click on any bounding box to get options: <strong>Edit Class</strong> (reassign to a different class), <strong>Copy Annotation</strong>, or <strong>Delete</strong>. The Annotations panel on the right also shows all boxes on the current image with their coordinates.</p>
+          <img src="../assets/images/blog/alchemyannotate/edit-delete-box.png" alt="Right-click context menu showing Edit Class, Copy Annotation, and Delete options" loading="lazy">
+          <p class="img-caption">Right-click on a box to edit the class, copy the annotation, or delete it</p>
+
+          <h3>Step 6: Choose your export format</h3>
+          <p>This is the part that saves time. In the bottom-right corner, you'll see the <strong>Format</strong> dropdown with three options: YOLO, VOC, and COCO. By default, annotations save in YOLO format. But since I plan to use <a href="alchemydetect-training-gui.html">AlchemyDetect</a> next (which needs COCO JSON for Detectron2), I switch to COCO — and AlchemyAnnotate offers to <strong>convert all existing annotations</strong> to the new format automatically.</p>
+          <img src="../assets/images/blog/alchemyannotate/format-conversion.png" alt="Format selection dropdown showing YOLO, VOC, and COCO options with conversion prompt" loading="lazy">
+          <p class="img-caption">Switching from YOLO to COCO format — the tool offers to convert all existing labels</p>
+
+          <p>No separate conversion scripts, no manual file wrangling. Annotate in YOLO, decide you need COCO later, and switch with one click.</p>
+
+          <h2>Keyboard Shortcuts &amp; Controls</h2>
+          <p>Speed matters when annotating hundreds of images. AlchemyAnnotate supports a full set of keyboard shortcuts so you rarely need to touch the menu:</p>
+
+          <h3>Keyboard</h3>
+          <table class="shortcut-table">
+            <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><code>A</code> / <code>&#8592;</code></td><td>Previous image</td></tr>
+              <tr><td><code>D</code> / <code>&#8594;</code></td><td>Next image</td></tr>
+              <tr><td><code>Delete</code></td><td>Delete selected bounding box</td></tr>
+              <tr><td><code>Ctrl+O</code></td><td>Open image folder</td></tr>
+              <tr><td><code>Ctrl+S</code></td><td>Save annotations</td></tr>
+              <tr><td><code>Ctrl+0</code></td><td>Fit image to window</td></tr>
+              <tr><td><code>Ctrl+Scroll</code></td><td>Zoom in / out</td></tr>
+              <tr><td><code>Ctrl+Q</code></td><td>Quit application</td></tr>
+            </tbody>
+          </table>
+
+          <h3>Mouse</h3>
+          <table class="shortcut-table">
+            <thead><tr><th>Control</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td>Left-click + drag</td><td>Draw bounding box</td></tr>
+              <tr><td>Click a box</td><td>Select bounding box</td></tr>
+              <tr><td>Right-click a box</td><td>Edit class / copy / delete</td></tr>
+              <tr><td>Middle-click + drag</td><td>Pan the image</td></tr>
+            </tbody>
+          </table>
+          <p>Between A/D navigation and click-to-draw, you can annotate an image in under 10 seconds once you're in a rhythm.</p>
+
+          <h2>Key Features Summary</h2>
+          <ul>
+            <li><strong>Multi-format export</strong> — YOLO, Pascal VOC, and COCO with one-click format conversion</li>
+            <li><strong>Auto-detection of existing annotations</strong> — Open a folder that already has YOLO labels or VOC XMLs, and they load automatically</li>
+            <li><strong>Autosave</strong> — Every change is saved immediately. No lost work.</li>
+            <li><strong>Session persistence</strong> — Close and reopen — you're exactly where you left off</li>
+            <li><strong>Zoom and pan</strong> — Ctrl+Scroll to zoom, middle-click to pan. Essential for tight boxes.</li>
+            <li><strong>Color-coded classes</strong> — Each class gets a color so you can visually verify annotations at a glance</li>
+          </ul>
+
+          <h2>Supported Formats</h2>
+          <ul>
+            <li><strong>YOLO</strong> — One <code>.txt</code> per image: <code>class_id cx cy w h</code> (normalized). Used by YOLOv5, YOLOv8, Ultralytics.</li>
+            <li><strong>Pascal VOC</strong> — One <code>.xml</code> per image. Used by older frameworks and some enterprise tools.</li>
+            <li><strong>COCO</strong> — Single <code>.json</code> for the entire dataset. Used by Detectron2, MMDetection, and most modern benchmarks.</li>
+          </ul>
+          <p>Supported image formats: JPG, PNG, BMP, TIFF, and WEBP.</p>
+
+          <h2>Technical Stack</h2>
+          <p>Built with Python and PySide6 (Qt6). MIT-licensed. Source on <a href="https://github.com/kouya-marino/AlchemyAnnotate" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+
+          <h2>What's Next</h2>
+          <p>Now that we have a COCO JSON dataset of labeled cars and bikes, the next step is training an object detection model on it. In the next post, I walk through doing exactly that with <a href="alchemydetect-training-gui.html"><strong>AlchemyDetect</strong></a> — a desktop GUI for training Detectron2 models without writing a single line of code.</p>
+
+          <div class="article-nav-links">
+            <a href="alchemydetect-training-gui.html" class="article-nav-link next">
+              <span class="article-nav-label">Next <i class="fas fa-arrow-right"></i></span>
+              <span class="article-nav-title">AlchemyDetect: Train a Car/Bike Detector</span>
+            </a>
+          </div>
+
+          <div class="article-tags">
+            <span class="project-tag">Python</span>
+            <span class="project-tag">PySide6</span>
+            <span class="project-tag">YOLO</span>
+            <span class="project-tag">Pascal VOC</span>
+            <span class="project-tag">COCO</span>
+            <span class="project-tag">Annotation</span>
+            <span class="project-tag">Car Detection</span>
+            <span class="project-tag">Open Source</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

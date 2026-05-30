@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog | Prashant Rawat</title>
+
+  <meta name="description" content="Articles on AI, robotics, computer vision, and deep learning by Prashant Rawat — Senior AI Engineer.">
+  <meta name="author" content="Prashant Rawat">
+
+  <meta property="og:title" content="Blog | Prashant Rawat">
+  <meta property="og:description" content="Articles on AI, robotics, computer vision, and deep learning.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/images/profile_pic.jpg">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Blog | Prashant Rawat">
+  <meta name="twitter:description" content="Articles on AI, robotics, computer vision, and deep learning.">
+  <meta name="twitter:image" content="assets/images/profile_pic.jpg">
+
+  <meta name="keywords" content="AI Blog, Robotics, Computer Vision, Deep Learning, Open Source, AlchemyCV, Detectron2, ROS2, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <noscript>
+    <style>
+      [data-aos] { opacity: 1 !important; transform: translate(0) scale(1) !important; }
+    </style>
+  </noscript>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="index.html#about">About</a></li>
+          <li><a href="index.html#skills">Skills</a></li>
+          <li><a href="index.html#experience">Experience</a></li>
+          <li><a href="index.html#portfolio">Portfolio</a></li>
+          <li><a href="blog.html" class="active">Blog</a></li>
+          <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Blog Hero -->
+  <section class="blog-hero">
+    <div class="container">
+      <h1 data-aos="fade-up">Blog</h1>
+      <p class="blog-hero-sub" data-aos="fade-up" data-aos-delay="100">Thoughts on AI, robotics, computer vision, and lessons from the field.</p>
+    </div>
+  </section>
+
+  <main>
+    <div class="container">
+
+      <!-- Blog Filters -->
+      <div class="blog-filters" data-aos="fade-up">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="project">Project Deep-Dive</button>
+        <button class="filter-btn" data-filter="technology">Technology</button>
+        <button class="filter-btn" data-filter="course">Course Brief</button>
+        <button class="filter-btn" data-filter="opensource">Open Source</button>
+      </div>
+
+      <!-- Blog Grid -->
+      <div class="blog-grid">
+
+        <!-- === OPEN SOURCE TOOLS (live) === -->
+
+        <article class="blog-card" data-category="opensource" data-aos="fade-up">
+          <div class="blog-card-img">
+            <img src="assets/images/Projects/P_alchemycv_app.png" alt="AlchemyCV" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--opensource">Open Source</span>
+              <time datetime="2025-07-15">Jul 15, 2025</time>
+            </div>
+            <h2><a href="blog/alchemycv-image-processing.html">AlchemyCV: A Desktop App for Multi-Stage Image Processing</a></h2>
+            <p>Why I built a 5-stage image processing pipeline as an open-source desktop tool — blur, enhance, filter, mask, and detect edges with real-time parameter tuning.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 6 min read</span>
+              <a href="blog/alchemycv-image-processing.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="opensource" data-aos="fade-up" data-aos-delay="100">
+          <div class="blog-card-img">
+            <img src="assets/images/Projects/P_alchemyannotate.png" alt="AlchemyAnnotate" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--opensource">Open Source</span>
+              <time datetime="2025-10-10">Oct 10, 2025</time>
+            </div>
+            <h2><a href="blog/alchemyannotate-annotation-tool.html">AlchemyAnnotate: A Lightweight Image Annotation Tool</a></h2>
+            <p>I built a desktop annotation tool that exports to YOLO, Pascal VOC, and COCO — because existing tools were either too heavy or too limited.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 7 min read</span>
+              <a href="blog/alchemyannotate-annotation-tool.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="opensource" data-aos="fade-up" data-aos-delay="200">
+          <div class="blog-card-img">
+            <img src="assets/images/Projects/P_alchemydetect.jpg" alt="AlchemyDetect" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--opensource">Open Source</span>
+              <time datetime="2026-01-20">Jan 20, 2026</time>
+            </div>
+            <h2><a href="blog/alchemydetect-training-gui.html">AlchemyDetect: Train Detectron2 Models Without Writing Code</a></h2>
+            <p>A desktop GUI for training Faster R-CNN, RetinaNet, and Mask R-CNN models — with real-time loss plots and one-click inference on images or folders.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 8 min read</span>
+              <a href="blog/alchemydetect-training-gui.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+
+        <!-- === LIVE BLOG === -->
+
+        
+        <article class="blog-card" data-category="project" data-aos="fade-up" data-aos-delay="200">
+          <div class="blog-card-img">
+            <img src="assets/images/Projects/P_UnitreeGo2.jpg" alt="Unitree Go2 Quadruped" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--project">Project Deep-Dive</span>
+              <time datetime="2026-02-28">Feb 28, 2026</time>
+            </div>
+            <h2><a href="blog/surveillance-quadruped-face-recognition.html">Building a Surveillance Quadruped with Face Recognition</a></h2>
+            <p>Turning a Unitree Go2 into an autonomous patrol robot — random-walk navigation in a mapped area, person detection, face-DB verification, and intrusion alerts.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 7 min read</span>
+              <a href="blog/surveillance-quadruped-face-recognition.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+        
+        <article class="blog-card" data-category="project" data-aos="fade-up">
+          <div class="blog-card-img">
+            <img src="assets/images/Projects/P_UnitreeG1.gif" alt="Unitree G1 Humanoid Robot" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--project">Project Deep-Dive</span>
+              <time datetime="2026-01-25">Jan 25, 2026</time>
+            </div>
+            <h2><a href="blog/humanoid-robot-navigation.html">Indoor Navigation for a Humanoid Robot</a></h2>
+            <p>A walkthrough of integrating VLM, LiDAR, and RealSense D435i on the Unitree G1 to give a humanoid robot the ability to navigate, see, and speak.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 8 min read</span>
+              <a href="blog/humanoid-robot-navigation.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a>
+            </div>
+          </div>
+        </article>
+        
+        
+        <!-- === COMING SOON === -->
+
+        <article class="blog-card" data-category="project" data-aos="fade-up">
+          <div class="blog-card-img">
+            <img src="assets/images/blog/g1-web-control/5.png" alt="Unitree G1 web operator console" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--project">Project Deep-Dive</span>
+              <time datetime="2026-03-15">Mar 15, 2026</time>
+            </div>
+            <h2><a href="blog/g1-web-control-foundation.html">Building a Browser-Based Control Panel for the Unitree G1 (Part 1: Foundation)</a></h2>
+            <p>How I built a React + Three.js operator console for a Unitree G1 humanoid — live costmap, point cloud overlay, camera feed, and click-to-go navigation, all from scratch.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 9 min read</span>
+              <!-- <a href="blog/g1-web-control-foundation.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a> -->
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="project" data-aos="fade-up" data-aos-delay="100">
+          <div class="blog-card-img">
+            <img src="assets/images/blog/g1-web-control/8.png" alt="Route creation page with waypoints" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--project">Project Deep-Dive</span>
+              <time datetime="2026-04-07">Apr 7, 2026</time>
+            </div>
+            <h2><a href="blog/g1-web-control-automation.html">From Click-to-Go to Programmable Missions: Routes, Actions &amp; Detection (Part 2)</a></h2>
+            <p>Programmable waypoint routes, an action library on the robot, recovery flows for failed goals, and a Detectron2 object detection pipeline wired straight into the operator UI.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 9 min read</span>
+              <!-- <a href="blog/g1-web-control-automation.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a> -->
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="project" data-aos="fade-up" data-aos-delay="200">
+          <div class="blog-card-img">
+            <img src="assets/images/blog/g1-web-control/5.png" alt="Unitree G1 robot-side stack" loading="lazy">
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--project">Project Deep-Dive</span>
+              <time datetime="2026-04-07">Apr 7, 2026</time>
+            </div>
+            <h2><a href="blog/g1-web-control-robot-side.html">Inside the Robot: Localization, Navigation, and Action Control on the Unitree G1 (Part 3)</a></h2>
+            <p>The robot-side deep dive — FAST-LIO + Open3D ICP localization, move_base tuning, the cmd_vel bridge, and the asyncio executor that runs everything on the Jetson.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 10 min read</span>
+              <!-- <a href="blog/g1-web-control-robot-side.html" class="read-more">Read more <i class="fas fa-arrow-right"></i></a> -->
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        
+
+        <article class="blog-card" data-category="technology" data-aos="fade-up" data-aos-delay="100">
+          <div class="blog-card-img">
+            <div class="blog-card-placeholder"><i class="fas fa-eye"></i></div>
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--technology">Technology</span>
+              <time datetime="2026-03-20">Mar 20, 2026</time>
+            </div>
+            <h2><a href="#">VLM vs VLA: Understanding Vision-Language Models in Robotics</a></h2>
+            <p>Breaking down the difference between Vision-Language Models and Vision-Language-Action models, when to use each, and real-world trade-offs I've encountered.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 6 min read</span>
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        
+        <article class="blog-card" data-category="technology" data-aos="fade-up">
+          <div class="blog-card-img">
+            <div class="blog-card-placeholder"><i class="fas fa-search"></i></div>
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--technology">Technology</span>
+              <time datetime="2026-02-15">Feb 15, 2026</time>
+            </div>
+            <h2><a href="#">Anomaly Detection in Manufacturing: PaDiM, Anomalib, and Beyond</a></h2>
+            <p>A practical comparison of anomaly detection approaches for manufacturing QA — what worked, what didn't, and how we got to 90%+ accuracy across 8 modules.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 9 min read</span>
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="course" data-aos="fade-up" data-aos-delay="100">
+          <div class="blog-card-img">
+            <div class="blog-card-placeholder"><i class="fas fa-graduation-cap"></i></div>
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--course">Course Brief</span>
+              <time datetime="2026-03-10">Mar 10, 2026</time>
+            </div>
+            <h2><a href="#">CNN to Transformer: A Visual Guide to Modern Architectures</a></h2>
+            <p>A concise walkthrough of the evolution from convolutional networks to transformers — what changed, why it matters, and how it connects to current work in vision and NLP.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 10 min read</span>
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="blog-card" data-category="course" data-aos="fade-up" data-aos-delay="200">
+          <div class="blog-card-img">
+            <div class="blog-card-placeholder"><i class="fas fa-robot"></i></div>
+          </div>
+          <div class="blog-card-body">
+            <div class="blog-card-meta">
+              <span class="blog-category blog-category--course">Course Brief</span>
+              <time datetime="2026-02-01">Feb 1, 2026</time>
+            </div>
+            <h2><a href="#">ROS2 for AI Engineers: What You Actually Need to Know</a></h2>
+            <p>A condensed guide to ROS2 for ML/AI engineers who need to ship robot software — nodes, topics, actions, and the parts that matter for real integration.</p>
+            <div class="blog-card-footer">
+              <span class="read-time"><i class="far fa-clock"></i> 12 min read</span>
+              <a href="#" class="read-more">Coming soon</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top">
+    <i class="fas fa-chevron-up"></i>
+  </button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

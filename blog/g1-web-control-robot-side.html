@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inside the Robot: Localization, Navigation, and Action Control on the Unitree G1 (Part 3) | Prashant Rawat</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Part 3 — robot-side deep dive: FAST-LIO + Open3D ICP localization, move_base tuning, the cmd_vel bridge, and asyncio action controllers on a Unitree G1 humanoid.">
+  <meta name="author" content="Prashant Rawat">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Inside the Robot: Localization, Navigation, and Action Control on the Unitree G1 (Part 3)">
+  <meta property="og:description" content="The robot-side engineering behind a Unitree G1 web operator console — FAST-LIO, Open3D ICP, move_base, unitree_sdk2py, and the asyncio executor that ties it together.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/blog/g1-web-control/5.png">
+  <meta property="article:published_time" content="2026-04-07">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Inside the Robot: Localization, Navigation, and Action Control on the Unitree G1 (Part 3)">
+  <meta name="twitter:description" content="The robot-side engineering behind a Unitree G1 web operator console — FAST-LIO, Open3D ICP, move_base, unitree_sdk2py, and the asyncio executor that ties it together.">
+  <meta name="twitter:image" content="../assets/images/blog/g1-web-control/5.png">
+
+  <meta name="keywords" content="Unitree G1, FAST-LIO, Open3D ICP, move_base, DWA Local Planner, ROS, unitree_sdk2py, Jetson Orin, LiDAR Localization, Humanoid Robot, asyncio, Robotics, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#skills">Skills</a></li>
+          <li><a href="../index.html#experience">Experience</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Project Deep-Dive</span>
+            <time datetime="2026-04-07">Apr 7, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 10 min read</span>
+          </div>
+          <h1>Inside the Robot: Localization, Navigation, and Action Control on the Unitree G1</h1>
+          <p class="article-subtitle">Part 3 of 3 — The Robot Side: FAST-LIO + Open3D ICP, move_base tuning, the cmd_vel bridge, and the asyncio executor that runs everything on the Jetson.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/blog/g1-web-control/5.png" alt="Live operator view of the Unitree G1 — costmap, point cloud, camera, and pose">
+        </div>
+
+        <div class="article-content">
+
+          <p><a href="g1-web-control-foundation.html">Part 1</a> showed the web UI. <a href="g1-web-control-automation.html">Part 2</a> showed the route automation layer. Both glossed over what's actually happening on the robot. This is the deep dive — the part that took the most engineering and that nobody else is going to write because there's no Stack Overflow answer for "how do I get FAST-LIO to play nicely with move_base on the G1's constrained Jetson stack."</p>
+
+          <p>If you don't care about ROS, TF trees, ICP fitness scores, or <a href="https://github.com/unitreerobotics/unitree_sdk2_python" target="_blank" rel="noopener noreferrer"><code>unitree_sdk2py</code></a>, this isn't your post. If you do, pull up a chair.</p>
+
+          <blockquote>
+            <p>Same disclaimer as the previous parts: <strong>everything described here was built from scratch for this project.</strong> No off-the-shelf G1 ROS package. No pre-tuned move_base configs from the internet. No copy-pasted launch files. Every parameter, every glue script, every line of robot-side logic — all hand-rolled.</p>
+          </blockquote>
+
+          <h2>The constraint that shaped everything</h2>
+
+          <p>The Unitree G1 ships with a fixed Linux + ROS toolchain on its Jetson Orin — and whichever version of ROS you happen to use, the same gap exists: the G1's leg controllers don't speak ROS at all. They speak DDS through the <code>unitree_sdk2py</code> library. You can't just <code>apt install</code> a driver and call it a day. There is no driver. You write it.</p>
+
+          <p>So the architecture has to bridge two worlds. On one side: a standard ROS stack (ROS1/ROS2 both apply here) with LiDAR, IMU, FAST-LIO, move_base, and the RealSense camera, all talking through topics. On the other side: the Unitree SDK with <code>LocoClient</code> (the legs), <code>AudioClient</code> (the speaker), and <code>ArmActionClient</code> (the arms), all talking through DDS. The middle is where I had to write the glue — every place a ROS topic needs to become an SDK call, or vice versa.</p>
+
+          <h2>The localization stack</h2>
+
+          <p><a href="https://github.com/deepglint/FAST_LIO_LOCALIZATION_HUMANOID" target="_blank" rel="noopener noreferrer">FAST-LIO (humanoid localization fork)</a> is excellent. It's a tightly-coupled LiDAR-Inertial odometry package that runs in real time on a Jetson with a Livox MID360, and it publishes an <code>odom → base_link</code> transform that's locally accurate. The problem is that it's an <em>odometry</em> package — it drifts over time. Drift is fine for short missions, deadly for an hour-long inspection round.</p>
+
+          <p>What I actually needed was global localization: a <code>map → base_link</code> chain that stays consistent against a known reference, no matter how long the robot has been running. So I built a two-phase pipeline.</p>
+
+          <p><strong>Phase one is the pre-mapping pass.</strong> I drive the robot through the entire space once with FAST-LIO running in mapping mode, and the output is a <code>.ply</code> point cloud of the environment saved to disk. This becomes the "ground truth" reference map for runtime. I do this once per environment — office, lab, demo space — and keep it in the launch config.</p>
+
+          <p><strong>Phase two is runtime localization</strong>, where two nodes work together. FAST-LIO runs in odometry-only mode, publishing <code>odom → base_link</code> continuously at high rate. In parallel, an Open3D ICP localization node subscribes to the live registered point cloud and continuously matches each scan against the pre-built <code>.ply</code> map using point-to-plane ICP. When ICP succeeds (fitness above a threshold), it computes the correction transform and publishes <code>map → odom</code>. This is the "global tug" that keeps FAST-LIO honest. FAST-LIO handles the fast local motion; Open3D handles the slow global drift correction. Together they give you a continuous, drift-free pose that's plenty for indoor humanoid navigation.</p>
+
+          <p>The full TF tree at runtime is: <code>map → odom → base_link</code>, with <code>base_link</code> further branching into <code>imu_link</code>, <code>livox_frame</code>, <code>motion_link</code>, and the RealSense camera frames. <code>map → odom</code> comes from Open3D, <code>odom → base_link</code> comes from FAST-LIO, and move_base reads <code>map → base_link</code> for global path planning.</p>
+
+          <h2>The transform tolerance trap</h2>
+
+          <p>One thing worth knowing if you ever pair a slow global localizer with move_base: the costmap has a <code>transform_tolerance</code> parameter that defines how stale a TF can be before the costmap freezes. If your global correction publishes less often than that tolerance allows, the costmap stalls during the gap, the local planner gets confused, and the nav stack appears to freeze every few seconds. The fix is to make the tolerance generous enough to absorb the localization gap rather than chasing CPU by running ICP faster — global accuracy doesn't need to be high-rate, it just needs to not time out.</p>
+
+          <h2>move_base configuration</h2>
+
+          <p>The move_base launch is small — three YAML files (costmap config, DWA local planner config, move_base config) loaded into the move_base namespace, and the move_base node itself. The interesting decisions are all in the costmap config.</p>
+
+          <p>The robot radius has to leave enough clearance for the G1's swinging arms during gait without losing too much navigable space. The obstacle source is the registered point cloud coming from FAST-LIO, not the raw LiDAR — that way obstacles are already deskewed and in the correct frame, no extra processing layer needed. The local costmap is a rolling window sized to balance detail against Jetson CPU budget, and the local planner is DWA at a rate that matches the local costmap.</p>
+
+          <p>The global costmap uses the standard three-layer setup: static (for the pre-built occupancy grid), obstacle (for live LiDAR points), and inflation. Inflation tuning matters more than people give it credit for — too narrow and the robot scrapes walls; too wide and it can't fit through doorways.</p>
+
+          <h2>The cmd_vel bridge</h2>
+
+          <p>This is where the ROS world meets <code>unitree_sdk2py</code>. move_base publishes <code>Twist</code> messages on <code>/cmd_vel</code>. The G1's legs need calls to <code>LocoClient.SetVelocity(vx, vy, omega, duration)</code>. So I wrote a small bridge node that subscribes to <code>/cmd_vel</code>, applies a deadband and a velocity clamp, and forwards the result to <code>SetVelocity</code>.</p>
+
+          <p>Looks simple. Took some tuning to get right.</p>
+
+          <p>The <strong>deadband</strong> is critical. move_base often emits very small velocities near the goal — too small for the G1's gait controller to do anything useful with. The legs just shuffle in place and the robot vibrates without making progress. Below the deadband threshold I clamp to zero instead of forwarding garbage. The result is the robot makes one final correction step and stops cleanly, instead of buzzing in place until it times out.</p>
+
+          <p>The <strong>clamp</strong> is a safety thing. The G1 will happily accept walking velocities high enough to destabilise the gait, so I hard-cap at a safe limit and never let move_base push past it.</p>
+
+          <p>Eventually I rolled this bridge into the main executor process to avoid running two separate Python processes that both need to initialize the DDS channel — which is expensive and fragile. Sharing the channel across one process is much cleaner.</p>
+
+          <h2>The executor architecture</h2>
+
+          <p>The robot-side brain is a single long-lived Python process on the Jetson that does several things at once.</p>
+
+          <p>It's a ROS node, so the Python ROS client is initialized at startup. It subscribes to <code>/cmd_vel</code> (the bridge), the localization pose, and the RealSense color/depth/info topics. It owns one instance each of the SDK's <code>LocoClient</code> and <code>AudioClient</code>, plus the action client for move_base. It connects to the backend over a single WebSocket and handles a small JSON protocol for starting, pausing, resuming, retrying, skipping, and stopping routes. Internally everything runs in an <code>asyncio</code> event loop, with ROS callbacks firing on a separate thread and synchronous SDK calls wrapped in <code>loop.run_in_executor</code> so they don't block the loop.</p>
+
+          <p>The executor is the only process on the robot that initializes the DDS channel and holds the SDK clients. Every action — move forward, rotate, play audio, pick up object, stand, sit — goes through this one process. This avoids the race conditions and channel-init storms you get when multiple processes all try to claim the SDK at the same time.</p>
+
+          <h2>Pose tracking — replacing the UDP hack</h2>
+
+          <p>The Unitree G1 reference demo code pipes pose data over <strong>UDP localhost</strong> between the ROS node and the action controller because they're separate processes. There's no schema, no error handling, no flow control. It exists because nobody figured out how to share state cleanly between the ROS Python client and asyncio.</p>
+
+          <p>In my rewrite I replaced this with a clean class. It subscribes to <code>/localization_3d</code> (the corrected map-frame pose published by Open3D), extracts the position and yaw from the quaternion, and stores them under a thread-safe lock. Other parts of the code call a snapshot method to get the latest pose at any time, and a staleness check to know whether the localization has gone silent.</p>
+
+          <p>This pose tracker is what makes the closed-loop motion primitives actually work. Both the distance-based forward/backward primitive and the angle-based rotation primitive start by capturing the initial pose, then issue a constant SDK velocity command, then poll the pose tracker in a loop until the target distance or angle is reached. The lock makes it safe to call from the asyncio loop while the ROS callback thread is updating it. No UDP. No JSON parsing. Just a ROS subscriber, a Python lock, and a snapshot method.</p>
+
+          <h2>The action controllers</h2>
+
+          <p>The action layer is split into three small async classes — one for locomotion, one for audio, and one for vision — each wrapping the corresponding SDK client and exposing a clean coroutine-based API.</p>
+
+          <p>The <strong>locomotion controller</strong> is the most interesting. It exposes the basic FSM transitions (walk-ready, sit, stop), the cmd_vel bridge callback (which lives on this class because it owns the only loco client instance), and a small set of pose-tracked motion primitives. Each primitive captures the initial pose, issues a constant SDK velocity command (one shot, not pulsed — pulsing fights the gait controller and looks awful), then polls the pose tracker until the target distance or angle is hit. The critical detail is the <code>try</code> / <code>finally</code> structure: every primitive guarantees a stop call runs in <code>finally</code>, no matter how the loop exits. Skip this and the legs keep walking until the SDK's internal timeout expires. That's bad.</p>
+
+          <p>The <strong>audio controller</strong> deals with the fact that the SDK doesn't take an MP3 path — it takes raw PCM chunks in a specific format. So the controller decodes the file, resamples it, and streams the bytes to the SDK in chunks. There's an <code>asyncio.Lock</code> around the entire playback because concurrent playback produces static, and an explicit sleep after the last chunk because the SDK returns once the bytes are buffered, not when the speaker actually finishes — calling stop too early cuts off audio mid-sentence.</p>
+
+          <p>The <strong>vision controller</strong> juggles three ROS subscribers (color, aligned depth, camera intrinsics) via <code>cv_bridge</code>. For object detection, the flow is the standard RGB-D pick recipe: run Detectron2, look up median depth inside the bbox, deproject to a 3D point in camera frame using the standard pinhole inverse, and apply the head-tilt rotation to convert into the robot's body frame. The final 3D point goes to the arm for the grasp. For fiducials I use <code>pupil_apriltags</code>, which returns full tag pose (translation + rotation) for each detected tag — the docking action just turns the tag's relative yaw into a rotation command and the tag's distance into a forward motion command, parking at a fixed offset.</p>
+
+          <p>After every detection cycle, the controller publishes two ROS topics — a compressed JPEG of the annotated frame and a JSON string with the detection metadata — which are picked up by a background WebSocket listener in the React app and persisted on the backend. (See <a href="g1-web-control-automation.html">Part 2</a> for the UI side of this.)</p>
+
+          <h2>Integration friction</h2>
+
+          <p>Getting all of this to run reliably on the Jetson involved the usual platform-integration friction — Python toolchain quirks, dependency issues with PyTorch on aarch64, version mismatches between dev laptop and target, WebSocket lifecycle bugs, and process startup ordering between move_base and the executor. Nothing exotic, but each one took time to track down. None of it is interesting in a blog post; all of it is the reason robotics projects take twice as long as you think they will.</p>
+
+          <h2>What this all enables</h2>
+
+          <p>When everything is wired up correctly, the entire stack runs as four processes on the robot: the localization node (FAST-LIO + Open3D), move_base, the route executor (which also runs the cmd_vel bridge and the vision pipeline), and rosbridge for the web UI to connect to. Four launch commands and you have:</p>
+
+          <ul>
+            <li>LiDAR-based localization with drift correction</li>
+            <li>Global and local planning via move_base</li>
+            <li>A web-controllable robot that takes JSON over WebSocket</li>
+            <li>A library of programmable actions — movement, rotation, sit/stand, audio playback, AprilTag docking, object pick-and-place</li>
+            <li>Live vision with Detectron2 and AprilTag detection</li>
+            <li>Closed-loop position control via the same <code>/localization_3d</code> topic the web UI subscribes to</li>
+          </ul>
+
+          <p>All running on the Jetson Orin onboard the robot. No backpack laptop. No external compute. The only thing the wifi link carries is JSON state and compressed JPEGs.</p>
+
+          <h2>Final thoughts</h2>
+
+          <p>If there's a moral to this story it's that <strong>the gap between "the robot has an SDK" and "the robot is useful in a demo" is much, much wider than vendors let on.</strong> Unitree gives you <code>unitree_sdk2py</code>. That's the legs. You still have to write the cmd_vel bridge (because move_base doesn't speak DDS), the localization stack (because the SDK doesn't know where the robot is in the world), the move_base config (because the defaults assume a Turtlebot, not a humanoid), the action library (because "walk to point X and pick up object Y" is not a single SDK call), the closed-loop position controllers (because <code>SetVelocity</code> is open-loop), the vision pipeline (because Detectron2 doesn't know about RealSense ROS topics), the recovery logic (because move_base aborts goals constantly), and the state machine that ties it all together (because there's no orchestrator in the box).</p>
+
+          <p>That's the gap. Closing it is real work. The web UI that sits on top of it (<a href="g1-web-control-foundation.html">Part 1</a>, <a href="g1-web-control-automation.html">Part 2</a>) is the visible part — the iceberg above the water. The robot side is everything underneath.</p>
+
+          <p>If you're tackling something similar — a humanoid platform that ships with a low-level SDK and you need to make it actually do things — feel free to copy the structure. The architecture works.</p>
+
+          <p><em>Built and tuned on a Unitree G1 humanoid (29 DoF, with hands), Livox MID360 LiDAR, Intel RealSense camera, and Jetson Orin compute. The executor and controllers were ported from the reference DDS layout to an asyncio-based architecture.</em></p>
+
+          <div class="article-nav-links">
+            <a href="g1-web-control-automation.html" class="article-nav-link prev">
+              <span class="article-nav-label"><i class="fas fa-arrow-left"></i> Previous</span>
+              <span class="article-nav-title">Part 2 — Routes, Actions &amp; Detection</span>
+            </a>
+          </div>
+
+          <div class="article-tags">
+            <span class="project-tag">Unitree G1</span>
+            <span class="project-tag">ROS</span>
+            <span class="project-tag">FAST-LIO</span>
+            <span class="project-tag">Open3D</span>
+            <span class="project-tag">move_base</span>
+            <span class="project-tag">DWA Planner</span>
+            <span class="project-tag">unitree_sdk2py</span>
+            <span class="project-tag">Jetson Orin</span>
+            <span class="project-tag">asyncio</span>
+            <span class="project-tag">LiDAR</span>
+            <span class="project-tag">Detectron2</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

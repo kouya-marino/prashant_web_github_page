@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From Click-to-Go to Programmable Missions: Routes, Actions &amp; Detection (Part 2) | Prashant Rawat</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Part 2 of the Unitree G1 web control series — programmable waypoint routes, robot actions, recovery, and Detectron2-powered object detection in the loop.">
+  <meta name="author" content="Prashant Rawat">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="From Click-to-Go to Programmable Missions: Routes, Actions &amp; Detection (Part 2)">
+  <meta property="og:description" content="Programmable waypoint routes, action library, recovery flows, and Detectron2 object detection wired into a Unitree G1 web operator console.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/blog/g1-web-control/8.png">
+  <meta property="article:published_time" content="2026-04-07">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="From Click-to-Go to Programmable Missions: Routes, Actions &amp; Detection (Part 2)">
+  <meta name="twitter:description" content="Programmable waypoint routes, action library, recovery flows, and Detectron2 object detection wired into a Unitree G1 web operator console.">
+  <meta name="twitter:image" content="../assets/images/blog/g1-web-control/8.png">
+
+  <meta name="keywords" content="Unitree G1, Waypoint Routes, Robot Mission Planner, Detectron2, Object Detection, AprilTag Docking, move_base, asyncio, ROS, WebSocket, Robotics, Prashant Rawat">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#skills">Skills</a></li>
+          <li><a href="../index.html#experience">Experience</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Project Deep-Dive</span>
+            <time datetime="2026-04-07">Apr 7, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 9 min read</span>
+          </div>
+          <h1>From Click-to-Go to Programmable Missions: Routes, Actions &amp; Detection</h1>
+          <p class="article-subtitle">Part 2 of 3 — The Automation Layer: waypoint routes, an action library, recovery flows, and Detectron2 object detection wired into the Unitree G1 web console.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/blog/g1-web-control/8.png" alt="Route creation page with waypoints, side panel, and yellow dashed route line">
+        </div>
+
+        <div class="article-content">
+
+          <p>In <a href="g1-web-control-foundation.html">Part 1</a> I covered the foundation: a web UI showing live costmaps, point clouds, and a 2D goal navigation flow for a Unitree G1 humanoid. That works great for one-off "go here" commands. But real robot work isn't single goals — it's sequences. <em>"Walk to position A. Stand up. Play an audio greeting. Walk to position B. Dock to an AprilTag. Pick up the box. Move to position C. Put it down."</em></p>
+
+          <p>That's a route with actions. This is the part where the system turns from a remote-control toy into something that can actually run a demo on its own.</p>
+
+          <blockquote>
+            <p>Like Part 1, <strong>everything in this post is built from scratch</strong> — the route editor UI, the waypoint state management, the action library on the robot, the WebSocket protocol that ties it all together, even the Detectron2 inference and detection persistence pipeline. No off-the-shelf "robot mission planner" was harmed in the making of this blog.</p>
+          </blockquote>
+
+          <h2>Why routes?</h2>
+
+          <p>Click-to-navigate is fantastic for tele-op. But the moment you have a multi-step demo — say, an inspection round where the robot stops at five points, scans something at each, and reports back — you can't be the one clicking. You need to define the route once and run it later.</p>
+
+          <p>I needed:</p>
+          <ul>
+            <li>A way to <strong>place waypoints</strong> by clicking on the map</li>
+            <li>A way to <strong>attach actions</strong> to each waypoint (audio, body movements, manipulation)</li>
+            <li>A way to <strong>save and reload</strong> routes from the backend</li>
+            <li>A way to <strong>execute</strong> routes and watch progress in real time</li>
+            <li><strong>Recovery options</strong> when something fails (because something always fails)</li>
+          </ul>
+
+          <h2>The Route Creation page</h2>
+
+          <img src="../assets/images/blog/g1-web-control/8.png" alt="Route Creation page with a pre-loaded route, waypoints, side panel, and yellow dashed route line" loading="lazy">
+          <p class="img-caption">Route editor — 3D scene on the left, waypoint side panel on the right, route polyline in yellow</p>
+
+          <p>This is the route editor. You can see:</p>
+
+          <ul>
+            <li><strong>The 3D scene on the left</strong> — same Three.js viewer as Part 1, with the costmap, point cloud overlay, and waypoint markers (green arrows with labels)</li>
+            <li><strong>The yellow dashed line</strong> — the route polyline connecting waypoints in execution order</li>
+            <li><strong>The side panel on the right</strong> — an editable list of waypoints, each expandable to show its actions</li>
+            <li><strong>The bottom toolbar</strong> — Save / Load / Execute / Stop / Pause buttons</li>
+          </ul>
+
+          <p>To place a waypoint: enable the <em>Add Waypoint</em> tool, click on the map where you want it, drag to set the heading, release. To reposition: with no tool active, left-click drag the marker. To rotate: right-click drag. To reorder: drag the rows in the side panel. Delete: trash icon per row.</p>
+
+          <p>Routes are persisted as JSON in the backend (<code>scans/&lt;map&gt;/routes/&lt;name&gt;.json</code>). The schema went through a refactor recently — it's now segment-based to support an external orchestrator API, but old waypoint-flat routes auto-migrate at load time so nothing breaks.</p>
+
+          <h2>The action library</h2>
+
+          <p>Each waypoint has a list of <strong>actions</strong> that run after the robot arrives. The action library covers the basic categories you need to script a real demo:</p>
+
+          <ul>
+            <li><strong>Timing</strong> — simple pauses for N seconds (the most-used action, by a wide margin)</li>
+            <li><strong>Movement</strong> — closed-loop forward/backward translation by an exact distance, closed-loop rotation by an exact angle, plus open-loop duration-based fallbacks for when localization gets flaky</li>
+            <li><strong>Body posture</strong> — enter walk-ready state, sit/park, via the standard <code>LocoClient</code> calls in the SDK</li>
+            <li><strong>Audio</strong> — stream an audio file through the onboard speaker via the SDK's audio client</li>
+            <li><strong>Manipulation</strong> — vision-guided pick-and-place using a depth camera, plus AprilTag-based docking that aligns yaw and approaches a fixed offset</li>
+          </ul>
+
+          <p>Every one of these sits behind a clean async API on the robot — handwritten glue between ROS topics and the <a href="https://github.com/unitreerobotics/unitree_sdk2_python" target="_blank" rel="noopener noreferrer"><code>unitree_sdk2py</code></a> SDK.</p>
+
+          <p>The frontend doesn't need to know how any of them work. It just sends a JSON action dict over WebSocket and the executor on the robot picks it up and runs it.</p>
+
+          <h2>Live execution</h2>
+
+          <p>Here's a full waypoint route in action:</p>
+
+          <div style="text-align:center;margin:1.5rem 0;">
+            <video controls width="100%" style="max-width:800px;border-radius:8px;">
+              <source src="../assets/images/blog/g1-web-control/navigate_using_waypoints.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+            <p class="img-caption">Creating a 3-waypoint route, attaching actions, and executing it end to end</p>
+          </div>
+
+          <p>What's happening in the video:</p>
+          <ol>
+            <li><strong>I create 3 waypoints</strong> by clicking on the map and dragging for orientation</li>
+            <li><strong>For each waypoint, I attach an action</strong> — in this demo, simple <code>wait</code> and movement actions to keep things visible</li>
+            <li><strong>I link the route to the backend execution API</strong> (the route is sent over WebSocket as a <code>route_start</code> message with all segments + initial pose)</li>
+            <li><strong>I hit Execute</strong> — the robot starts navigating to the first waypoint via move_base</li>
+            <li><strong>The side panel shows live progress</strong> — a yellow pulsing dot on the active waypoint, green dots on completed ones, gray on pending</li>
+            <li><strong>At each waypoint</strong> the robot stops, runs its actions, then continues to the next</li>
+            <li><strong>When all 3 are done</strong> the panel shows "Route completed"</li>
+          </ol>
+
+          <p>The progress feedback comes from the executor on the robot sending <code>progress</code> messages back through the WebSocket relay every time the phase changes (<code>navigating</code> / <code>action</code> / <code>pre_action</code> / <code>post_action</code>).</p>
+
+          <h2>Robustness — because navigation fails</h2>
+
+          <p>You can't ship a robot demo where one failed waypoint kills the entire route. move_base aborts goals all the time — wheels slip, costmaps update, the robot oscillates. So I added a recovery layer:</p>
+
+          <p><strong>Pause / Resume</strong><br>
+          At any point during execution, hit Pause. The current move_base goal is cancelled, the robot stops, and the executor blocks. Hit Resume and it re-issues the same goal and keeps going. The state survives — your route doesn't reset.</p>
+
+          <p><strong>Retry / Skip</strong><br>
+          When move_base returns <code>ABORTED</code> for a waypoint, instead of failing the whole route, the executor sends a <code>route_paused</code> message with the failed waypoint index. The UI shows an amber pulsing dot on that waypoint, and below the row two buttons appear: <strong>Retry</strong> (re-issue the goal — useful when the obstacle has moved) and <strong>Skip</strong> (mark this waypoint as done and move to the next one — useful when the goal is genuinely unreachable).</p>
+
+          <p><strong>Stop</strong><br>
+          The big red button. Cancels everything, stops the robot, drops the WebSocket. Use when something is wrong and you don't want to debug right now.</p>
+
+          <p>All of this is wired up via three additional WebSocket message types: <code>route_pause</code>, <code>route_resume</code>, <code>route_retry</code>, <code>route_skip</code>. Each maps to an <code>asyncio.Event</code> in the executor that the navigation loop polls between move_base goal attempts.</p>
+
+          <h2>Object detection — Detectron2 in the loop</h2>
+
+          <p>When the pick action runs, the executor needs to know <strong>where</strong> the object actually is. The only sensor that knows is the RealSense camera on the robot's head, and the only way to find a specific object in an RGB image is a vision model.</p>
+
+          <p>I integrated <strong>Detectron2</strong> running directly on the Jetson with a custom-trained model. The flow is the standard "RGB-D object pick" recipe:</p>
+
+          <ol>
+            <li>Grab the latest frame from <code>/camera/color/image_raw</code></li>
+            <li>Run Detectron2 inference and pick the target detection</li>
+            <li>Look up depth inside the bounding box from <code>/camera/aligned_depth_to_color/image_raw</code> and deproject the bbox center into a 3D point in the camera frame</li>
+            <li>Apply the head-tilt rotation to convert into the robot's body frame</li>
+            <li>Hand the 3D point off to the arm controller for the actual grasp</li>
+          </ol>
+
+          <p>But the more interesting bit (for a blog post anyway) is: <strong>how does the operator see what the robot detected?</strong></p>
+
+          <p>I added two new ROS topics published by the vision controller after every detection:</p>
+
+          <ul>
+            <li><code>/detection_image/compressed</code> — the annotated camera frame with bounding boxes drawn (JPEG)</li>
+            <li><code>/detection_result</code> — a JSON string with <code>{timestamp, status, location, objects: [{class_name, confidence, bbox}]}</code></li>
+          </ul>
+
+          <p>A background WebSocket listener in the React app subscribes to both, POSTs each detection to the backend, and the backend persists them to <code>detections/</code> (one <code>.json</code> + one <code>.jpg</code> per detection). They survive restarts.</p>
+
+          <p>In the UI, click the side menu (top right) → <strong>Detections</strong>:</p>
+
+          <img src="../assets/images/blog/g1-web-control/9.png" alt="Side menu opened with Detection option visible" loading="lazy">
+          <p class="img-caption">Side menu — Detection panel is one click away from any view</p>
+
+          <p>You get a panel with the full detection history.</p>
+
+          <img src="../assets/images/blog/g1-web-control/10.png" alt="Detection panel card view showing past detections with bounding boxes, class names, confidence, and location" loading="lazy">
+          <p class="img-caption">Detection card view — every past detection with its annotated image, class, confidence, and location</p>
+
+          <p>Each card shows:</p>
+          <ul>
+            <li>The annotated image with bounding boxes</li>
+            <li>Class name and confidence percentage</li>
+            <li>Bounding box coordinates</li>
+            <li>Status (Detected / None)</li>
+            <li>Location identifier (configurable per deployment)</li>
+            <li>Timestamp</li>
+          </ul>
+
+          <p>Switch to table view if you want a denser layout. Click any thumbnail for a full-size modal.</p>
+
+          <p>The whole thing is <strong>opt-in observability</strong> — the detection panel doesn't have to be open for detections to be saved. The background listener catches every detection regardless.</p>
+
+          <h2>What's next</h2>
+
+          <p>I'm working on <strong>multi-robot orchestration</strong>. Right now each segment in a route is gated locally by the executor. But in a multi-robot setup, you want a central scheduler that says "OK, your turn, do segment 3 now." That's the external-orchestrator integration — each segment can have an optional trigger field that tells the backend to wait until an external scheduler publishes a matching step before executing. The backend polls the scheduler, releases segments as their triggers fire, and reports completions back so the scheduler can advance.</p>
+
+          <p>That's already implemented but not yet wired to a real multi-robot deployment — I'll write a follow-up once it's running end-to-end.</p>
+
+          <h2>Closing</h2>
+
+          <p>This whole project — the React + Three.js UI, the FastAPI backend, the FAST-LIO localization tuning, the move_base configuration, the Unitree SDK action library, the Detectron2 inference pipeline, the WebSocket relay, the route schema, the orchestrator integration — was built from scratch. Every layer.</p>
+
+          <p>If you're a robotics person who's been thinking "I wish I had a real web UI for my robot but it sounds like too much work" — it's not impossible. It's just a lot of small problems stacked on top of each other. Pick the layer that scares you most, build it first, and the rest follows.</p>
+
+          <p>If you missed it, <a href="g1-web-control-foundation.html">Part 1</a> covers the foundation: the localization stack, the live visualization, and the click-to-go navigation flow. <a href="g1-web-control-robot-side.html">Part 3</a> goes inside the robot — FAST-LIO, move_base, and the action controllers.</p>
+
+          <p><em>Built on a Unitree G1 humanoid with a Livox MID360 LiDAR and a Jetson Orin. UI in React 19 + TypeScript + Three.js, backend in FastAPI, robot side in Python with <code>unitree_sdk2py</code> and a fair bit of hand-tuning of FAST-LIO and move_base.</em></p>
+
+          <div class="article-nav-links">
+            <a href="g1-web-control-foundation.html" class="article-nav-link prev">
+              <span class="article-nav-label"><i class="fas fa-arrow-left"></i> Previous</span>
+              <span class="article-nav-title">Part 1 — Foundation</span>
+            </a>
+            <a href="g1-web-control-robot-side.html" class="article-nav-link next">
+              <span class="article-nav-label">Next <i class="fas fa-arrow-right"></i></span>
+              <span class="article-nav-title">Part 3 — Inside the Robot</span>
+            </a>
+          </div>
+
+          <div class="article-tags">
+            <span class="project-tag">Unitree G1</span>
+            <span class="project-tag">Humanoid</span>
+            <span class="project-tag">Mission Planner</span>
+            <span class="project-tag">Detectron2</span>
+            <span class="project-tag">Object Detection</span>
+            <span class="project-tag">AprilTag</span>
+            <span class="project-tag">move_base</span>
+            <span class="project-tag">asyncio</span>
+            <span class="project-tag">WebSocket</span>
+            <span class="project-tag">RealSense</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

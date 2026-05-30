@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlchemyDetect: Train Detectron2 Models Without Writing Code | Prashant Rawat</title>
+
+  <meta name="description" content="How I built AlchemyDetect — a desktop GUI for training Faster R-CNN, RetinaNet, and Mask R-CNN models using Detectron2, with real-time loss visualization.">
+  <meta name="author" content="Prashant Rawat">
+
+  <meta property="og:title" content="AlchemyDetect: Train Detectron2 Models Without Writing Code">
+  <meta property="og:description" content="A desktop GUI for Detectron2 model training and inference.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="../assets/images/Projects/P_alchemydetect.jpg">
+  <meta property="article:published_time" content="2026-01-20">
+  <meta property="article:author" content="Prashant Rawat">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AlchemyDetect: Train Detectron2 Models Without Writing Code">
+  <meta name="twitter:description" content="A desktop GUI for Detectron2 model training and inference.">
+  <meta name="twitter:image" content="../assets/images/Projects/P_alchemydetect.jpg">
+
+  <meta name="keywords" content="AlchemyDetect, Detectron2, Object Detection, Instance Segmentation, Faster R-CNN, Mask R-CNN, RetinaNet, PyTorch, Training GUI, Python, Open Source">
+
+  <link rel="icon" type="image/png" href="../assets/images/logo_2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="../index.html" class="logo">
+        <img src="../assets/images/logo_2.png" alt="Prashant Rawat Logo" width="44" height="44">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span class="hamburger"></span>
+      </button>
+      <nav class="site-nav" role="navigation">
+        <ul class="nav-list">
+          <li><a href="../index.html#about">About</a></li>
+          <li><a href="../index.html#portfolio">Portfolio</a></li>
+          <li><a href="../index.html#opensource">Open Source</a></li>
+          <li><a href="../blog.html" class="active">Blog</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article-page">
+      <div class="container">
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+        <header class="article-header">
+          <div class="blog-card-meta">
+            <span class="blog-category blog-category--project">Open Source</span>
+            <time datetime="2026-01-20">Jan 20, 2026</time>
+            <span class="read-time"><i class="far fa-clock"></i> 8 min read</span>
+          </div>
+          <h1>AlchemyDetect: Train Detectron2 Models Without Writing Code</h1>
+          <p class="article-subtitle">A desktop GUI that lets you train Faster R-CNN, RetinaNet, and Mask R-CNN models visually — with real-time loss plots and one-click inference.</p>
+        </header>
+
+        <div class="article-cover">
+          <img src="../assets/images/Projects/P_alchemydetect.jpg" alt="AlchemyDetect Application Interface">
+        </div>
+
+        <div class="article-content">
+
+          <h2>The Motivation</h2>
+          <p>Detectron2 is one of the best frameworks for object detection and instance segmentation. But getting started with it means writing configuration files, training scripts, and inference pipelines. For quick experiments or for colleagues who aren't comfortable with code, this is a barrier.</p>
+          <p>I built AlchemyDetect to remove that barrier: <strong>select a model, point it at your data, click train, watch the loss curve, run inference</strong> — all from a GUI.</p>
+
+          <h2>Installation</h2>
+          <pre><code>pip install alchemydetect</code></pre>
+          <p>Requires Python 3.10 or 3.11. Dependencies include PyTorch, Detectron2, PyQt6, and pyqtgraph — all installed automatically.</p>
+          <p><strong>Note:</strong> You need a CUDA-capable GPU for practical training speeds. CPU training works but is very slow for anything beyond toy datasets.</p>
+
+          <h2>Supported Models</h2>
+          <p>AlchemyDetect supports six model configurations across three architectures, all initialized with pretrained COCO weights for strong transfer learning:</p>
+          <ul>
+            <li><strong>Faster R-CNN</strong> — R50-FPN and R101-FPN. The workhorse of two-stage detection.</li>
+            <li><strong>RetinaNet</strong> — R50-FPN and R101-FPN. Single-stage detector, faster training and inference.</li>
+            <li><strong>Mask R-CNN</strong> — R50-FPN and R101-FPN. Extends Faster R-CNN with per-instance pixel masks for instance segmentation.</li>
+          </ul>
+
+          <h2>Walkthrough: Training a Car/Bike Detector</h2>
+          <p>Continuing from the <a href="alchemyannotate-annotation-tool.html">AlchemyAnnotate walkthrough</a>, I have a COCO JSON dataset of 30 labeled car and bike images. Let's train a Faster R-CNN model on it and run inference — all without writing a single line of code.</p>
+
+          <h3>Step 1: Configure training data and model</h3>
+          <p>In the <strong>Train</strong> tab, set up your training run:</p>
+          <ul>
+            <li><strong>Train Images</strong> — point to the folder containing your training images</li>
+            <li><strong>Train JSON</strong> — select the COCO annotation file (the one we exported from AlchemyAnnotate)</li>
+            <li><strong>Output Dir</strong> — choose where to save the trained model weights</li>
+            <li><strong>Model</strong> — I selected <strong>Faster R-CNN (R50-FPN)</strong></li>
+          </ul>
+          <p>As soon as you select the annotation file, AlchemyDetect reads it and displays the <strong>number of images, total annotations, class count, and class names</strong> (bike, car) — a quick sanity check before training.</p>
+          <img src="../assets/images/blog/alchemydetect/train-setup.png" alt="AlchemyDetect Train tab showing data paths, model selection, and dataset summary" loading="lazy">
+          <p class="img-caption">Train tab — dataset loaded (30 images, 2 classes: bike, car), Faster R-CNN selected, hyperparameters set</p>
+
+          <h3>Step 2: Train and watch the loss curve</h3>
+          <p>Set your hyperparameters (learning rate, iterations, batch size) and click <strong>Start Training</strong>. Two things happen simultaneously:</p>
+          <ul>
+            <li>The <strong>left panel</strong> shows a live training log — each iteration prints the loss values, learning rate, and timing</li>
+            <li>The <strong>right panel</strong> shows a real-time <strong>Training Loss</strong> graph that updates as training progresses</li>
+          </ul>
+          <p>You can see the loss dropping from ~2.5 down to ~0.05 over the course of training. When complete, the model weights are automatically saved to your output directory.</p>
+          <img src="../assets/images/blog/alchemydetect/training-progress.png" alt="AlchemyDetect training in progress — log panel and loss curve showing loss decreasing" loading="lazy">
+          <p class="img-caption">Training complete — loss dropped from ~2.5 to ~0.05, model saved. The GPU info shows training ran on an NVIDIA GeForce GTX 1050 Ti.</p>
+
+          <h3>Step 3: Load the trained model</h3>
+          <p>Switch to the <strong>Inference</strong> tab. Click <strong>Load Model</strong> and select the final model weights (<code>model_final.pth</code>) from the output directory. The model checkpoint files from different training iterations are also available if you want to compare.</p>
+          <img src="../assets/images/blog/alchemydetect/load-model.png" alt="Loading trained model weights in the Inference tab" loading="lazy">
+          <p class="img-caption">Loading model_final.pth — the trained Faster R-CNN weights</p>
+
+          <h3>Step 4: Run inference on a single image</h3>
+          <p>Click <strong>Run on Image</strong> and select a test image (one the model hasn't seen during training). AlchemyDetect shows a file browser with image thumbnails for easy selection.</p>
+          <img src="../assets/images/blog/alchemydetect/run-on-image.png" alt="Selecting a test image for inference with thumbnail preview" loading="lazy">
+          <p class="img-caption">Selecting a test image — thumbnails make it easy to pick the right one</p>
+
+          <h3>Step 5: See the detection results</h3>
+          <p>The model detects the bike with <strong>96% confidence</strong>. The result panel on the right shows the class name, confidence score, and bounding box coordinates. The detection is drawn directly on the image.</p>
+          <img src="../assets/images/blog/alchemydetect/inference-bike.png" alt="Bike detected with 96% confidence score and bounding box overlay" loading="lazy">
+          <p class="img-caption">Bike detected at 96% confidence — bounding box overlaid on the image</p>
+
+          <p>Here's another result — a car detected at an auto expo, with the model correctly identifying it despite the complex background:</p>
+          <img src="../assets/images/blog/alchemydetect/inference-car.png" alt="Car detected with confidence score and bounding box at an auto expo" loading="lazy">
+          <p class="img-caption">Car detection on a challenging test image with busy background</p>
+
+          <h3>Step 6: Batch inference on a folder</h3>
+          <p>For running inference on multiple images at once, click <strong>Run on Folder</strong> and select your test folder. AlchemyDetect processes every image in the folder.</p>
+          <img src="../assets/images/blog/alchemydetect/run-on-folder.png" alt="Selecting a folder for batch inference" loading="lazy">
+          <p class="img-caption">Selecting the test folder for batch inference</p>
+
+          <p>A green progress bar shows the batch inference running. You can browse through the results using the Prev/Next buttons as each image completes.</p>
+          <img src="../assets/images/blog/alchemydetect/folder-progress.png" alt="Batch inference progress bar and results" loading="lazy">
+          <p class="img-caption">Batch inference in progress — green bar shows 50% complete, results viewable as they come in</p>
+
+          <h2>Technical Stack</h2>
+          <ul>
+            <li><strong>PyQt6</strong> — Desktop GUI framework</li>
+            <li><strong>Detectron2</strong> — Model training and inference engine</li>
+            <li><strong>PyTorch</strong> — Deep learning backbone</li>
+            <li><strong>pyqtgraph</strong> — Real-time loss plot rendering</li>
+          </ul>
+          <p>MIT-licensed. Source on <a href="https://github.com/kouya-marino/AlchemyDetect" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+
+          <h2>The Alchemy Suite Pipeline</h2>
+          <p>AlchemyDetect is the middle piece of the pipeline:</p>
+          <ol>
+            <li><strong><a href="alchemyannotate-annotation-tool.html">AlchemyAnnotate</a></strong> — Label images, export as COCO JSON</li>
+            <li><strong>AlchemyDetect</strong> — Train a detection model on those labels</li>
+            <li><strong><a href="alchemycv-image-processing.html">AlchemyCV</a></strong> — Pre/post-process images in the pipeline</li>
+          </ol>
+          <p>Each tool is independent, but together they give you a complete local workflow from raw images to a trained, deployable model — no cloud services, no subscriptions, no data leaving your machine.</p>
+
+          <div class="article-nav-links">
+            <a href="alchemyannotate-annotation-tool.html" class="article-nav-link prev">
+              <span class="article-nav-label"><i class="fas fa-arrow-left"></i> Previous</span>
+              <span class="article-nav-title">AlchemyAnnotate: Labeling a Car/Bike Dataset</span>
+            </a>
+          </div>
+
+          <div class="article-tags">
+            <span class="project-tag">Python</span>
+            <span class="project-tag">Detectron2</span>
+            <span class="project-tag">PyTorch</span>
+            <span class="project-tag">PyQt6</span>
+            <span class="project-tag">Faster R-CNN</span>
+            <span class="project-tag">Mask R-CNN</span>
+            <span class="project-tag">Car Detection</span>
+            <span class="project-tag">Open Source</span>
+          </div>
+        </div>
+
+        <div class="article-author">
+          <img src="../assets/images/profile_pic.jpg" alt="Prashant Rawat" width="56" height="56">
+          <div>
+            <strong>Prashant Rawat</strong>
+            <p>Senior AI Engineer | 7+ years in CV, Object Detection, NLP &amp; Robotics</p>
+          </div>
+        </div>
+
+        <a href="../blog.html" class="article-back"><i class="fas fa-arrow-left"></i> Back to Blog</a>
+
+      </div>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <h2 class="footer-name">Prashant Rawat</h2>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/prashantrawat.yuki" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://www.instagram.com/decoderprashant" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        <a href="https://github.com/kouya-marino" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github"></i></a>
+        <a href="https://www.linkedin.com/in/prashantrawat" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Prashant Rawat. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <button class="back-to-top" aria-label="Back to top" title="Back to top"><i class="fas fa-chevron-up"></i></button>
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
