@@ -1334,6 +1334,19 @@ blockquote p {
   color: #ef4444;
 }
 
+.contact-cta h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  margin-bottom: 0.6rem;
+}
+
+.contact-cta p {
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
 /* --- Responsive: Stats Bar --- */
 @media (max-width: 768px) {
   .stats-grid {

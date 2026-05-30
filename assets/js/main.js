@@ -127,30 +127,4 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   });
-
-  // --- Contact form handling ---
-  var contactForm = document.getElementById('contactForm');
-  var formStatus = document.getElementById('form-status');
-
-  if (contactForm) {
-    contactForm.addEventListener('submit', function (e) {
-      var action = contactForm.getAttribute('action');
-
-      if (!action || action.includes('your-form-id')) {
-        e.preventDefault();
-        if (formStatus) {
-          formStatus.textContent = 'Form not configured yet. Please reach out directly at prashantrawatmailbox@gmail.com';
-          formStatus.className = 'form-status error';
-        }
-        return;
-      }
-
-      // Show sending state
-      var submitBtn = contactForm.querySelector('button[type="submit"]');
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-      }
-    });
-  }
 });
